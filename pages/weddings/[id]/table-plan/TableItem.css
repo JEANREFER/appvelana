@@ -1,0 +1,25 @@
+.seat-wrapper {
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.seat-wrapper:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+}
+
+.seat-wrapper::after {
+  content: attr(data-seat);
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 10px;
+  background: #555;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 10px;
+}

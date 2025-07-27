@@ -1,0 +1,261 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int                  @id @default(autoincrement())
+  name             String
+  email            String               @unique
+  password         String
+  role             Role                 // marie / organisateur / prestataire / invite
+  weddings         Wedding[]            // marié(e) ou organisateur : 1 ou plusieurs mariages
+  vendors          UserVendor[]         // prestataire lié à un mariage
+  createdAt        DateTime             @default(now())
+  isValidated      Boolean              @default(false) // pour les prestataires (admin)
+  company          String?              // pour les prestataires (optionnel)
+  city             String?              // utile pour organiser ou référencer
+  vendorProfile    Vendor?              // relation inverse de Vendor.user
+  weddingAccesses  UserWeddingAccess[]  // accès aux mariages partagés (marié(e)s ajoutés par un organisateur)
+}
+
+model Wedding {
+  id              Int                  @id @default(autoincrement())
+  couple_name     String
+  wedding_date    DateTime
+  budget          Float                @default(0.0)
+  created_by      Int
+  creator         User                 @relation(fields: [created_by], references: [id])
+  guests          Guest[]
+  tasks           Task[]
+  providers       Provider[]
+  budgetEntries   BudgetEntry[]
+  notes           Note[]
+  userVendors     UserVendor[]
+  meals           Meal[]
+  transport       Transport[]
+  accommodation   Accommodation[]
+  ceremonies      Ceremony[]
+  animations      Animation[]
+  outfits         Outfit[]
+  others          Other[]
+  guestfamilies   Guestfamily[]
+  milestones  Milestone[] 
+  userAccesses    UserWeddingAccess[]  // utilisateurs invités (marié(e)s associés)
+}
+
+model Guest {
+  id         Int      @id @default(autoincrement())
+  firstName  String
+  lastName   String
+  phone      String?
+  email      String?
+  response   String   @default("En attente")
+  numGuests  Int      @default(1)
+  comment    String?
+  weddingId  Int
+  wedding    Wedding  @relation(fields: [weddingId], references: [id])
+}
+
+model Guestfamily {
+  id              Int      @id @default(autoincrement())
+  nom             String
+  prénom          String
+  age             Int
+  family          String
+  centresInteret  String
+  guestid         Int
+  weddingId       Int
+  group           String   @default("Famille")
+  wedding         Wedding  @relation(fields: [weddingId], references: [id])
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  type        String
+  description String?
+  due_date    DateTime?
+  status      String     @default("À faire")
+  completed   Boolean    @default(false)
+  weddingId   Int
+  wedding     Wedding    @relation(fields: [weddingId], references: [id])
+}
+
+model Vendor {
+  id          Int           @id @default(autoincrement())
+  name        String
+  city        String
+  type        String
+  description String
+  price       Int
+  imageUrl    String?
+  website     String?
+  contact     String?
+  validated   Boolean       @default(false)
+  userId      Int?          @unique // ✅ Ajout nécessaire ici
+  user        User?         @relation(fields: [userId], references: [id])
+  rating      Float         @default(0)
+  ratings     Int           @default(0)
+  userVendors UserVendor[]
+}
+
+
+model UserVendor {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  weddingId    Int
+  vendorId     Int?
+  name         String
+  custom       Boolean   @default(false)
+  city         String?
+  description  String?
+  price        Int?
+  deposit      Int?
+  paid         Boolean   @default(false)
+  note         Int?
+  user         User      @relation(fields: [userId], references: [id])
+  wedding      Wedding   @relation(fields: [weddingId], references: [id])
+  vendor       Vendor?   @relation(fields: [vendorId], references: [id])
+
+  @@unique([userId, vendorId, weddingId]) 
+}
+
+
+model Provider {
+  id         Int      @id @default(autoincrement())
+  name       String
+  category   String
+  contact    String?
+  price      Float    @default(0.0)
+  weddingId  Int
+  wedding    Wedding  @relation(fields: [weddingId], references: [id])
+}
+
+model BudgetEntry {
+  id          Int       @id @default(autoincrement())
+  description String
+  amount      Float
+  type        EntryType
+  weddingId   Int
+  wedding     Wedding   @relation(fields: [weddingId], references: [id])
+}
+
+model Note {
+  id         Int       @id @default(autoincrement())
+  content    String
+  targetDate DateTime?
+  weddingId  Int
+  wedding    Wedding   @relation(fields: [weddingId], references: [id])
+}
+
+model Meal {
+  id          Int      @id @default(autoincrement())
+  type        String
+  description String?
+  status      String   @default("À faire")
+  due_date    DateTime?
+  weddingId   Int
+  wedding     Wedding  @relation(fields: [weddingId], references: [id])
+}
+
+model Transport {
+  id          Int      @id @default(autoincrement())
+  type        String
+  description String?
+  status      String   @default("À faire")
+  due_date    DateTime?
+  weddingId   Int
+  wedding     Wedding  @relation(fields: [weddingId], references: [id])
+}
+
+model Accommodation {
+  id          Int      @id @default(autoincrement())
+  type        String
+  description String?
+  status      String   @default("À faire")
+  due_date    DateTime?
+  weddingId   Int
+  wedding     Wedding  @relation(fields: [weddingId], references: [id])
+}
+
+model Ceremony {
+  id        Int      @id @default(autoincrement())
+  name      String
+  date      DateTime?
+  location  String?
+  status    String   @default("À faire")
+  due_date  DateTime?
+  weddingId Int
+  wedding   Wedding  @relation(fields: [weddingId], references: [id])
+}
+
+model Animation {
+  id         Int      @id @default(autoincrement())
+  weddingId  Int
+  type       String
+  performer  String?
+  time       String?
+  contact    String?
+  wedding    Wedding @relation(fields: [weddingId], references: [id])
+}
+
+model Outfit {
+  id        Int      @id @default(autoincrement())
+  person    String
+  type      String
+  details   String?
+  status    String
+  weddingId Int
+  wedding   Wedding @relation(fields: [weddingId], references: [id])
+}
+
+model Other {
+  id          Int      @id @default(autoincrement())
+  type        String
+  description String?
+  status      String   @default("À faire")
+  due_date    DateTime?
+  weddingId   Int
+  wedding     Wedding  @relation(fields: [weddingId], references: [id])
+}
+
+model UserWeddingAccess {
+  id         Int     @id @default(autoincrement())
+  userId     Int
+  weddingId  Int
+
+  user       User    @relation(fields: [userId], references: [id])
+  wedding    Wedding @relation(fields: [weddingId], references: [id])
+
+  @@unique([userId, weddingId])
+}
+
+model Milestone {
+  id        Int      @id @default(autoincrement())
+  title     String
+  date      DateTime
+  status    String
+  wedding   Wedding  @relation(fields: [weddingId], references: [id])
+  weddingId Int
+
+}
+
+
+// ENUMS
+
+enum Role {
+  marie
+  organisateur
+  prestataire
+  invite
+}
+
+enum EntryType {
+  depense
+  revenu
+}
